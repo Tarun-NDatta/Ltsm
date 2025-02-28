@@ -20,7 +20,7 @@ MODEL_PATH = "models/stock_lstm.h5"
 os.makedirs("data", exist_ok=True)
 os.makedirs("models", exist_ok=True)
 
-# Fetch Stock Data
+# get Stock Data
 def fetch_stock_data(stock_ticker):
     data = yf.download(stock_ticker, start="2015-01-01", end="2024-01-01")
     data.to_csv("data/stock_data.csv")
@@ -28,14 +28,13 @@ def fetch_stock_data(stock_ticker):
 
 # Preprocessing
 def preprocess_data(data):
-    # Ensure correct datatype
     data["Close"] = pd.to_numeric(data["Close"], errors="coerce")
 
     # Fill missing values if any
     data["Close"].fillna(method="ffill", inplace=True)
-    data = data.dropna()  # Drop remaining NaN rows (if any)
+    data = data.dropna()  
 
-    # Scale data
+   
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_data = scaler.fit_transform(data["Close"].values.reshape(-1, 1))
     
@@ -45,11 +44,11 @@ def preprocess_data(data):
         y.append(scaled_data[i, 0])
     
     X, y = np.array(X), np.array(y)
-    X = np.reshape(X, (X.shape[0], X.shape[1], 1))  # LSTM expects 3D input
+    X = np.reshape(X, (X.shape[0], X.shape[1], 1))  
     
     return X, y, scaler
 
-# Build LSTM Model
+
 def build_lstm_model():
     model = Sequential([ 
         LSTM(units=50, return_sequences=True, input_shape=(LOOKBACK, 1)),
@@ -65,18 +64,15 @@ def build_lstm_model():
 
 # Train & Predict
 def train_and_predict():
-    # Load or fetch stock data
     if not os.path.exists("data/stock_data.csv"):
         data = fetch_stock_data(STOCK_TICKER)
     else:
         data = pd.read_csv("data/stock_data.csv", index_col=0, parse_dates=True)
 
-    # Ensure index is in datetime format (handle potential errors)
     if not isinstance(data.index, pd.DatetimeIndex):
-        data.index = pd.to_datetime(data.index, errors="coerce")  # Coerce errors to NaT
-        data = data.dropna(subset=["Close"])  # Drop rows where date conversion failed
+        data.index = pd.to_datetime(data.index, errors="coerce")  
+        data = data.dropna(subset=["Close"])  
     
-    # Debugging print after date conversion
     print("First 5 rows after cleaning:\n", data.head())
 
     # Preprocess data
